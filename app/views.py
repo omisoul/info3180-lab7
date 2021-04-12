@@ -5,12 +5,56 @@ Werkzeug Documentation:  http://werkzeug.pocoo.org/documentation/
 This file creates your application.
 """
 
+import os
 from app import app
-from flask import render_template, request
+from flask import render_template, request, redirect, url_for, session, abort, jsonify
+from werkzeug.utils import secure_filename
+
+from .forms import UploadForm
+
+# Helpers
+def get_uploaded_images():
+    # image_list = []
+    file_list = []
+    rootdir = os.getcwd()
+    for subdir, dirs, files in os.walk(rootdir + '/uploads'):
+        for file in files:
+            # image_list.append(os.path.join(subdir,file))
+            file_list.append(file)
+    return file_list
 
 ###
 # Routing for your application.
 ###
+@app.route('/api/upload', methods=['POST'])
+def upload():
+
+    # Instantiate your form class
+    upload_form = UploadForm()
+
+    # Validate file upload on submit
+    if upload_form.validate_on_submit():
+        # Get file data and save to your uploads folder
+        image = upload_form.photo.data
+        description = upload_form.description.data
+
+        filename = secure_filename(image.filename)
+        image.save(os.path.join(
+            app.config['UPLOAD_FOLDER'], filename
+        ))
+
+        res = {
+            "message": "File Upload Successful",
+            "filename": filename,
+            "description": description
+        }
+        return jsonify(res)
+
+    res = {
+        "errors": [{"error": x} for x in form_errors(upload_form)]
+    }
+    return jsonify(res)
+
 
 
 # Please create all new routes and view functions above this route.
@@ -73,6 +117,12 @@ def add_header(response):
 def page_not_found(error):
     """Custom 404 page."""
     return render_template('404.html'), 404
+
+###
+# The functions below should be applicable to all Flask apps.
+###
+
+
 
 
 if __name__ == '__main__':

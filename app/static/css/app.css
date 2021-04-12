@@ -1,3 +1,13 @@
 body {
     padding-top: 5rem;
 }
+
+ul{
+    padding: 10px;
+}
+
+label{
+    font-weight: 700;
+    font-size: 18px;
+}
+

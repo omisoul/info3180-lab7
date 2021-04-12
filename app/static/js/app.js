@@ -22,6 +22,9 @@ app.component('app-header', {
           <li class="nav-item active">
             <router-link class="nav-link" to="/">Home <span class="sr-only">(current)</span></router-link>
           </li>
+          <li class="nav-item active">
+            <router-link class="nav-link" to="/upload">Upload </router-link>
+          </li>
         </ul>
       </div>
     </nav>
@@ -43,6 +46,79 @@ app.component('app-footer', {
         }
     }
 });
+
+
+
+const UploadForm = {
+    name: 'UploadForm',
+    template: `
+    <div>
+        <h1>Upload Form</h1>
+        <ul :class="type">
+            <li v-for='message in messages' :key="message">
+                {{ message }}
+            </li>
+        </ul>
+        <form @submit.prevent="uploadPhoto" id="uploadForm" enctype="multipart/form-data">
+            <label htmlFor="description">Description:</label>
+            <br/>
+            <textarea name="description" cols="30" rows="10" class="form-control"></textarea>
+            <br/>
+            <label htmlFor="photo">Photo:</label>
+            <br/>
+            <input type="file" name="photo"/>
+            <br/>
+            <input type="submit" value="Submit" class="my-4 btn btn-primary" />
+        </form>
+    </div>
+    
+    `,
+
+    methods: {
+        uploadPhoto(){
+            let self = this
+            let uploadForm = document.getElementById('uploadForm');
+            let form_data = new FormData(uploadForm);
+            fetch("/api/upload", {
+                method: 'POST',
+                body: form_data,
+                headers: {
+                    'X-CSRFToken': token
+                     },
+                     credentials: 'same-origin'
+               })
+                .then(function (response) {
+                return response.json();
+                })
+                .then(function (jsonResponse) {
+                // display a success message
+                console.log(jsonResponse);
+                if(jsonResponse.errors){
+                    self.type = 'alert alert-danger';
+                    self.messages = [];
+                    for (i of jsonResponse.errors){
+                        console.log(i.error);
+                        self.messages= [...self.messages, i.error]
+                    }
+                }else{
+                    self.type = 'alert alert-success'
+                    self.messages = [jsonResponse.message]
+                }
+                console.log(self.type);
+                console.log(self.messages)
+                })
+                .catch(function (error) {
+                console.log(error);
+            });
+        }
+    },
+    data() {
+        return {
+            messages: [],
+            type: ''
+        }
+    }
+}
 
 const Home = {
     name: 'Home',
@@ -73,6 +149,7 @@ const NotFound = {
 const routes = [
     { path: "/", component: Home },
     // Put other routes here
+    {path:'/upload', component: UploadForm},
 
     // This is a catch all route in case none of the above matches
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFound }
